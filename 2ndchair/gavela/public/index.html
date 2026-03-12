@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2ndChair — AI Litigation Command Center</title>
+<meta name="description" content="Real-time AI analysis for trial attorneys and their teams. Objections, strategy, and case law surfaced the moment you need them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,700&family=DM+Mono:wght@300;400;500&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0a0a0a;--ink2:#111111;--ink3:#1a1a1a;--ink4:#242424;
+  --gold:#c9a84c;--gold2:#e8c97a;--gold-d:#8a6d2a;
+  --gold-f:rgba(201,168,76,0.07);--gold-f2:rgba(201,168,76,0.13);--gold-f3:rgba(201,168,76,0.22);
+  --text:#e8e4dc;--text2:#b8b0a0;--text3:#7a7060;
+  --border:rgba(201,168,76,0.12);--border2:rgba(201,168,76,0.22);
+  --red:#c0392b;--red-f:rgba(192,57,43,0.1);--green:#27ae60;
+}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--text);font-family:'Crimson Pro',Georgia,serif;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");opacity:.028;pointer-events:none;z-index:0}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:20px 48px;background:rgba(10,10,10,0.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);transition:padding .3s}
+nav.scrolled{padding:14px 48px}
+.nav-logo{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;color:var(--gold);letter-spacing:.01em;text-decoration:none}
+.nav-logo span{font-style:italic;font-weight:400;color:var(--gold2)}
+.nav-links{display:flex;align-items:center;gap:32px;list-style:none}
+.nav-links a{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text2);text-decoration:none;transition:color .2s}
+.nav-links a:hover{color:var(--gold)}
+.nav-cta{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;background:transparent;border:1px solid var(--gold-d);color:var(--gold);padding:8px 18px;border-radius:2px;cursor:pointer;text-decoration:none;transition:all .2s}
+.nav-cta:hover{background:var(--gold-f2);border-color:var(--gold)}
+
+/* HERO */
+.hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:120px 48px 80px;text-align:center;overflow:hidden}
+.hero::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);width:700px;height:500px;background:radial-gradient(ellipse at center,rgba(201,168,76,0.08) 0%,transparent 70%);pointer-events:none}
+.hero-corner{position:absolute;width:28px;height:28px;border-color:var(--gold-d);border-style:solid;opacity:.5}
+.hero-corner.tl{top:100px;left:48px;border-width:1px 0 0 1px}
+.hero-corner.tr{top:100px;right:48px;border-width:1px 1px 0 0}
+.hero-corner.bl{bottom:80px;left:48px;border-width:0 0 1px 1px}
+.hero-corner.br{bottom:80px;right:48px;border-width:0 1px 1px 0}
+.hero-eyebrow{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-d);margin-bottom:28px;display:flex;align-items:center;gap:12px;opacity:0;animation:fadeUp .8s .1s forwards}
+.hero-eyebrow::before,.hero-eyebrow::after{content:'';display:block;width:32px;height:1px;background:var(--gold-d)}
+.hero-title{font-family:'Playfair Display',serif;font-size:clamp(3rem,7vw,6.5rem);font-weight:700;line-height:1.05;letter-spacing:-.02em;color:var(--text);max-width:900px;margin-bottom:8px;opacity:0;animation:fadeUp .9s .25s forwards}
+.hero-title em{font-style:italic;color:var(--gold)}
+.hero-sub{font-family:'Crimson Pro',serif;font-size:clamp(1.1rem,2vw,1.45rem);font-weight:300;font-style:italic;color:var(--text2);max-width:620px;margin:24px auto 48px;line-height:1.6;opacity:0;animation:fadeUp .9s .4s forwards}
+.hero-cta-group{display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center;opacity:0;animation:fadeUp .9s .55s forwards}
+.btn-primary{font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;background:var(--gold);color:var(--ink);border:none;padding:14px 32px;border-radius:2px;cursor:pointer;text-decoration:none;font-weight:500;transition:all .25s;position:relative;overflow:hidden}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(201,168,76,0.2);filter:brightness(1.08)}
+.btn-ghost{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;background:transparent;color:var(--text2);border:1px solid rgba(255,255,255,0.1);padding:14px 24px;border-radius:2px;cursor:pointer;text-decoration:none;transition:all .2s}
+.btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,0.25)}
+.hero-note{margin-top:24px;font-family:'DM Mono',monospace;font-size:.55rem;letter-spacing:.1em;color:var(--text3);opacity:0;animation:fadeUp .9s .7s forwards}
+
+/* TICKER */
+.ticker-wrap{position:absolute;bottom:0;left:0;right:0;border-top:1px solid var(--border);background:var(--ink2);overflow:hidden;padding:10px 0;opacity:0;animation:fadeIn 1s 1.2s forwards}
+.ticker{display:flex;animation:ticker 35s linear infinite;white-space:nowrap}
+.ticker-item{font-family:'DM Mono',monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:0 32px;border-right:1px solid var(--border);flex-shrink:0}
+.ticker-item span{color:var(--gold);margin-right:6px}
+
+/* SECTIONS */
+.section{position:relative;z-index:1;padding:100px 48px;max-width:1100px;margin:0 auto}
+.section-rule{display:flex;align-items:center;gap:16px;margin-bottom:56px}
+.section-rule::before{content:'';flex:1;height:1px;background:var(--border)}
+.section-label{font-family:'DM Mono',monospace;font-size:.57rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-d);white-space:nowrap}
+.section-rule::after{content:'';width:6px;height:6px;border:1px solid var(--gold-d);transform:rotate(45deg);flex-shrink:0}
+
+/* PROBLEM */
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:64px}
+.problem-card{background:var(--ink2);padding:36px 32px;position:relative;overflow:hidden}
+.problem-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--red),transparent);opacity:0;transition:opacity .3s}
+.problem-card:hover::before{opacity:1}
+.problem-num{font-family:'Playfair Display',serif;font-size:3rem;font-weight:700;font-style:italic;color:rgba(201,168,76,0.08);line-height:1;margin-bottom:12px;transition:color .3s}
+.problem-card:hover .problem-num{color:rgba(201,168,76,0.15)}
+.problem-title{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:600;color:var(--text);margin-bottom:10px}
+.problem-body{font-size:1rem;color:var(--text2);line-height:1.65}
+
+/* PRODUCT */
+.product-section{background:var(--ink2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:100px 48px}
+.product-inner{max-width:1100px;margin:0 auto}
+.product-headline{font-family:'Playfair Display',serif;font-size:clamp(2rem,4vw,3.2rem);font-weight:700;line-height:1.15;max-width:640px;margin-bottom:56px}
+.product-headline em{font-style:italic;color:var(--gold)}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+.feature{background:var(--ink2);padding:36px 28px;transition:background .2s}
+.feature:hover{background:var(--ink3)}
+.feature-icon{font-size:1.4rem;margin-bottom:16px;display:block}
+.feature-title{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:var(--text);margin-bottom:8px}
+.feature-body{font-size:.95rem;color:var(--text2);line-height:1.6}
+.feature-tag{display:inline-block;margin-top:14px;font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-d);border:1px solid rgba(201,168,76,0.15);padding:3px 8px;border-radius:2px}
+
+/* HOW IT WORKS */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;position:relative}
+.step{padding:40px 28px 36px;background:var(--ink2);position:relative}
+.step-num{font-family:'DM Mono',monospace;font-size:.57rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-d);margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.step-num::after{content:'';flex:1;height:1px;background:var(--border)}
+.step-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:var(--text);margin-bottom:10px}
+.step-body{font-size:.95rem;color:var(--text2);line-height:1.6}
+
+/* QUOTE */
+.quote-section{padding:100px 48px;max-width:800px;margin:0 auto;text-align:center}
+.quote-mark{font-family:'Playfair Display',serif;font-size:5rem;font-weight:700;font-style:italic;color:var(--gold-f3);line-height:.5;display:block;margin-bottom:8px}
+.quote-text{font-family:'Playfair Display',serif;font-size:clamp(1.4rem,2.5vw,2rem);font-style:italic;font-weight:400;color:var(--text);line-height:1.5;margin-bottom:28px}
+.quote-attr{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);display:flex;align-items:center;justify-content:center;gap:12px}
+.quote-attr::before,.quote-attr::after{content:'';display:block;width:24px;height:1px;background:var(--text3)}
+
+/* URGENCY */
+.urgency-band{background:var(--gold-f);border-top:1px solid var(--border2);border-bottom:1px solid var(--border2);padding:20px 48px;display:flex;align-items:center;justify-content:center;gap:40px;flex-wrap:wrap}
+.urgency-item{display:flex;align-items:center;gap:10px;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text2)}
+.urgency-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0}
+
+/* WAITLIST */
+.waitlist-section{padding:100px 48px 120px;text-align:center;position:relative;overflow:hidden}
+.waitlist-section::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:600px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-d),transparent)}
+.waitlist-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:800px;height:400px;background:radial-gradient(ellipse,rgba(201,168,76,0.05) 0%,transparent 70%);pointer-events:none}
+.waitlist-title{font-family:'Playfair Display',serif;font-size:clamp(2rem,4vw,3rem);font-weight:700;line-height:1.15;margin-bottom:16px;position:relative}
+.waitlist-title em{font-style:italic;color:var(--gold)}
+.waitlist-sub{font-family:'Crimson Pro',serif;font-size:1.2rem;font-style:italic;color:var(--text2);margin-bottom:48px;position:relative}
+.waitlist-form{display:flex;gap:0;max-width:520px;margin:0 auto 16px;position:relative}
+.waitlist-input{flex:1;background:var(--ink2);border:1px solid var(--border2);border-right:none;color:var(--text);font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.05em;padding:14px 18px;outline:none;border-radius:2px 0 0 2px;transition:border-color .2s}
+.waitlist-input::placeholder{color:var(--text3)}
+.waitlist-input:focus{border-color:var(--gold-d)}
+.waitlist-btn{background:var(--gold);color:var(--ink);border:none;font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;font-weight:500;padding:14px 24px;border-radius:0 2px 2px 0;cursor:pointer;white-space:nowrap;transition:filter .2s}
+.waitlist-btn:hover{filter:brightness(1.08)}
+.waitlist-btn:disabled{opacity:.5;cursor:not-allowed;filter:none}
+.waitlist-fine{font-family:'DM Mono',monospace;font-size:.53rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);position:relative}
+.waitlist-success{display:none;flex-direction:column;align-items:center;gap:12px;max-width:520px;margin:0 auto}
+.waitlist-success.on{display:flex}
+.waitlist-form.off,.waitlist-fine.off{display:none}
+.success-icon{width:48px;height:48px;border-radius:50%;background:var(--gold-f2);border:1px solid var(--gold-d);display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.success-title{font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--gold)}
+.success-body{font-size:1rem;color:var(--text2);font-style:italic}
+
+/* PREVIEW */
+.preview-section{padding:0 48px 100px;max-width:1100px;margin:0 auto}
+.preview-wrap{border:1px solid var(--border2);border-radius:4px;overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,.6),0 0 0 1px rgba(201,168,76,0.08)}
+.preview-bar{background:var(--ink3);padding:10px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+.preview-dot{width:10px;height:10px;border-radius:50%}
+.preview-dot.r{background:#c0392b}.preview-dot.y{background:#f39c12}.preview-dot.g{background:#27ae60}
+.preview-url{margin-left:8px;flex:1;background:var(--ink4);border:1px solid var(--border);border-radius:3px;padding:4px 12px;font-family:'DM Mono',monospace;font-size:.55rem;color:var(--text3);letter-spacing:.04em}
+.preview-body{background:var(--ink);display:grid;grid-template-columns:1fr 2px 1.2fr 2px .7fr;height:320px}
+.preview-col{display:flex;flex-direction:column;overflow:hidden}
+.preview-divider{background:var(--border)}
+.preview-col-hdr{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.pcol-title{font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-d)}
+.preview-entries{padding:8px;flex:1;overflow:hidden;display:flex;flex-direction:column;gap:4px}
+.pe{padding:6px 8px;border-radius:2px;border-left:2px solid;background:var(--ink2)}
+.pe.judge{border-color:#f39c12}.pe.pros{border-color:#e74c3c}.pe.def{border-color:#27ae60}
+.pe-spk{font-family:'DM Mono',monospace;font-size:.45rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
+.pe.judge .pe-spk{color:#f39c12}.pe.pros .pe-spk{color:#e74c3c}.pe.def .pe-spk{color:#27ae60}
+.pe-txt{font-family:'Crimson Pro',serif;font-size:.78rem;color:var(--text2);line-height:1.3}
+.preview-cards{padding:8px;flex:1;overflow:hidden;display:flex;flex-direction:column;gap:5px}
+.pc{padding:8px 10px;border-radius:2px;background:var(--ink2);border:1px solid var(--border);position:relative;overflow:hidden}
+.pc::before{content:'';position:absolute;top:0;left:0;bottom:0;width:2px}
+.pc.obj::before{background:var(--red)}.pc.strat::before{background:var(--gold)}.pc.law::before{background:#6b7a8d}
+.pc-type{font-family:'DM Mono',monospace;font-size:.44rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+.pc.obj .pc-type{color:var(--red)}.pc.strat .pc-type{color:var(--gold)}.pc.law .pc-type{color:#6b7a8d}
+.pc-txt{font-family:'Crimson Pro',serif;font-size:.76rem;color:var(--text2);line-height:1.3}
+.preview-sidebar-content{padding:10px;display:flex;flex-direction:column;gap:6px}
+.psb-card{background:var(--ink2);border:1px solid var(--border);border-radius:2px;padding:8px 10px}
+.psb-label{font-family:'DM Mono',monospace;font-size:.45rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-d);margin-bottom:5px}
+.psb-val{font-family:'Crimson Pro',serif;font-size:.78rem;color:var(--text2);line-height:1.4}
+.psb-pills{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.psb-pill{font-family:'DM Mono',monospace;font-size:.42rem;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:2px;background:var(--gold-f);border:1px solid rgba(201,168,76,0.15);color:var(--gold-d)}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:32px 48px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.footer-logo{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--gold-d)}
+.footer-links{display:flex;gap:24px;list-style:none}
+.footer-links a{font-family:'DM Mono',monospace;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);text-decoration:none;transition:color .2s}
+.footer-links a:hover{color:var(--text2)}
+.footer-copy{font-family:'DM Mono',monospace;font-size:.53rem;letter-spacing:.06em;color:var(--text3)}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* SCROLL REVEAL */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .7s,transform .7s}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  nav{padding:16px 24px}.nav-links{display:none}
+  .hero{padding:100px 24px 80px}
+  .section{padding:64px 24px}
+  .problem-grid{grid-template-columns:1fr}
+  .features-grid{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr 1fr}
+  .product-section{padding:64px 24px}
+  .waitlist-section{padding:64px 24px 80px}
+  .waitlist-form{flex-direction:column}
+  .waitlist-input{border-right:1px solid var(--border2);border-radius:2px;border-bottom:none}
+  .waitlist-btn{border-radius:2px;padding:12px}
+  footer{padding:24px;flex-direction:column;align-items:flex-start}
+  .preview-section{display:none}
+  .urgency-band{padding:16px 24px;gap:20px}
+  .hero-corner{display:none}
+}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <a class="nav-logo" href="#">2ndChair<span>.</span></a>
+  <ul class="nav-links">
+    <li><a href="#how-it-works">How It Works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="app.html" class="nav-cta">Client Login →</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-corner tl"></div><div class="hero-corner tr"></div>
+  <div class="hero-corner bl"></div><div class="hero-corner br"></div>
+  <div class="hero-eyebrow">AI Litigation Command Center</div>
+  <h1 class="hero-title">The intelligence your team needs,<br><em>the moment it matters.</em></h1>
+  <p class="hero-sub">Real-time objections, strategy, and case law surfaced mid-hearing — so your second chair stays one step ahead of the courtroom.</p>
+  <div class="hero-cta-group">
+    <a href="#waitlist" class="btn-primary">Request Early Access</a>
+    <a href="#how-it-works" class="btn-ghost">See How It Works</a>
+  </div>
+  <p class="hero-note">Limited beta access · Defense teams only · Florida & expanding</p>
+  <div class="ticker-wrap">
+    <div class="ticker">
+      <div class="ticker-item"><span>⚡</span>Objection surfaced in &lt;2s</div>
+      <div class="ticker-item"><span>📋</span>Case law pulled from session context</div>
+      <div class="ticker-item"><span>🔴</span>Chain of custody challenge flagged</div>
+      <div class="ticker-item"><span>⚡</span>4th Amendment relevance detected</div>
+      <div class="ticker-item"><span>📋</span>Witness impeachment angle identified</div>
+      <div class="ticker-item"><span>🔴</span>Hearsay objection ready</div>
+      <div class="ticker-item"><span>⚡</span>Suppression motion angle noted</div>
+      <div class="ticker-item"><span>📋</span>Defense theory alignment confirmed</div>
+      <div class="ticker-item"><span>⚡</span>Objection surfaced in &lt;2s</div>
+      <div class="ticker-item"><span>📋</span>Case law pulled from session context</div>
+      <div class="ticker-item"><span>🔴</span>Chain of custody challenge flagged</div>
+      <div class="ticker-item"><span>⚡</span>4th Amendment relevance detected</div>
+      <div class="ticker-item"><span>📋</span>Witness impeachment angle identified</div>
+      <div class="ticker-item"><span>🔴</span>Hearsay objection ready</div>
+      <div class="ticker-item"><span>⚡</span>Suppression motion angle noted</div>
+      <div class="ticker-item"><span>📋</span>Defense theory alignment confirmed</div>
+    </div>
+  </div>
+</section>
+
+<!-- APP PREVIEW -->
+<div class="preview-section reveal">
+  <div class="preview-wrap">
+    <div class="preview-bar">
+      <div class="preview-dot r"></div><div class="preview-dot y"></div><div class="preview-dot g"></div>
+      <div class="preview-url">app.2ndchair.net — State v. Rivera · Miami-Dade · Drug Trafficking · Trial</div>
+    </div>
+    <div class="preview-body">
+      <div class="preview-col">
+        <div class="preview-col-hdr"><span class="pcol-title">📜 Live Transcript</span><span class="pcol-title" style="color:var(--text3)">4 statements</span></div>
+        <div class="preview-entries">
+          <div class="pe judge"><div class="pe-spk">Judge</div><div class="pe-txt">Counsel, you may proceed with cross-examination.</div></div>
+          <div class="pe pros"><div class="pe-spk">Prosecutor</div><div class="pe-txt">Officer, did the K-9 alert to the vehicle?</div></div>
+          <div class="pe def"><div class="pe-spk">Witness</div><div class="pe-txt">Yes, Zeus alerted on the rear quarter panel.</div></div>
+          <div class="pe pros"><div class="pe-spk">Prosecutor</div><div class="pe-txt">And that alert established probable cause, correct?</div></div>
+        </div>
+      </div>
+      <div class="preview-divider"></div>
+      <div class="preview-col">
+        <div class="preview-col-hdr"><span class="pcol-title">⚡ Analysis</span></div>
+        <div class="preview-cards">
+          <div class="pc obj"><div class="pc-type">🔴 Objection · Act Now</div><div class="pc-txt">Challenge K-9 reliability — Zeus has 3 prior suppressed alerts. Request voir dire on handler certification before this testimony proceeds.</div></div>
+          <div class="pc strat"><div class="pc-type">🟡 Strategy</div><div class="pc-txt">K-9 probable cause is vulnerable. Florida v. Harris requires reliability evidence. Move to strike if prosecution can't establish training records.</div></div>
+          <div class="pc law"><div class="pc-type">⚫ Case Law</div><div class="pc-txt">Florida v. Harris (2013) — K-9 reliability must be established. Attack the specific handler's certification record.</div></div>
+        </div>
+      </div>
+      <div class="preview-divider"></div>
+      <div class="preview-col">
+        <div class="preview-col-hdr"><span class="pcol-title">Case Context</span></div>
+        <div class="preview-sidebar-content">
+          <div class="psb-card"><div class="psb-label">Jurisdiction</div><div class="psb-val">Florida · Miami-Dade<br>Hon. Sandra Ortega</div></div>
+          <div class="psb-card"><div class="psb-label">Focus Areas</div><div class="psb-pills"><span class="psb-pill">4th Amendment</span><span class="psb-pill">Chain of Custody</span><span class="psb-pill">FRE 403</span></div></div>
+          <div class="psb-card"><div class="psb-label">Defense Theory</div><div class="psb-val">Pretextual stop, unreliable K-9, broken chain</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section class="section" id="problem">
+  <div class="section-rule reveal"><span class="section-label">The Problem</span></div>
+  <div class="problem-grid reveal">
+    <div class="problem-card">
+      <div class="problem-num">01</div>
+      <div class="problem-title">The courtroom moves faster than memory</div>
+      <div class="problem-body">Objection windows close in seconds. By the time you've recalled the relevant case law, the testimony is in the record and the moment is gone.</div>
+    </div>
+    <div class="problem-card">
+      <div class="problem-num">02</div>
+      <div class="problem-title">Your second chair is flying blind</div>
+      <div class="problem-body">Support staff track the record by hand with no intelligent layer connecting what's being said to your specific defense theory, witnesses, and jurisdiction.</div>
+    </div>
+    <div class="problem-card">
+      <div class="problem-num">03</div>
+      <div class="problem-title">Research tools live outside the courtroom</div>
+      <div class="problem-body">Westlaw and case databases are for preparation, not live proceedings. There's nothing built for the team supporting an attorney on their feet under real-time pressure.</div>
+    </div>
+    <div class="problem-card">
+      <div class="problem-num">04</div>
+      <div class="problem-title">Context is everything — and it's always missing</div>
+      <div class="problem-body">Generic AI tools don't know your witnesses, your judge, your theory of the case. Generic answers in a specific proceeding are worse than no answers at all.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="product-section" id="features">
+  <div class="product-inner">
+    <div class="section-rule reveal"><span class="section-label">What It Does</span></div>
+    <h2 class="product-headline reveal"><em>Context-aware</em> intelligence,<br>built for the defense table.</h2>
+    <div class="features-grid reveal">
+      <div class="feature">
+        <span class="feature-icon">🔴</span>
+        <div class="feature-title">Real-Time Objections</div>
+        <div class="feature-body">Flags objectionable testimony the moment it's entered — hearsay, leading questions, improper foundation, chain of custody breaks — with the exact grounds to raise.</div>
+        <span class="feature-tag">Act within seconds</span>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">⚖️</span>
+        <div class="feature-title">Jurisdiction-Aware Case Law</div>
+        <div class="feature-body">Analysis is anchored to your state, county, and judge. Florida precedent for Miami-Dade differs from federal precedent in the Southern District. We know the difference.</div>
+        <span class="feature-tag">State + county specific</span>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">🎯</span>
+        <div class="feature-title">Defense Theory Alignment</div>
+        <div class="feature-body">Every analysis is filtered through your stated theory of the case. Not generic strategy — strategy that fits the defense you've already built.</div>
+        <span class="feature-tag">Your case, your context</span>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">👥</span>
+        <div class="feature-title">Built for the Support Team</div>
+        <div class="feature-body">Designed for a second chair or paralegal to operate while lead counsel focuses on argument. The team gets smarter without the attorney breaking focus.</div>
+        <span class="feature-tag">Team workflow</span>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">🔒</span>
+        <div class="feature-title">Confidentiality-First Architecture</div>
+        <div class="feature-body">Session data never persists beyond the hearing. Transcript content is never logged. Built against SOC-2 standards with attorney-client privilege obligations in mind.</div>
+        <span class="feature-tag">No data retention</span>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">⚡</span>
+        <div class="feature-title">Instant Session Setup</div>
+        <div class="feature-body">Load your case context in under 90 seconds. Return sessions pre-fill everything. Start analyzing from the first statement — before the gavel drops.</div>
+        <span class="feature-tag">Ready in 90 seconds</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how-it-works">
+  <div class="section-rule reveal"><span class="section-label">How It Works</span></div>
+  <div class="steps reveal">
+    <div class="step">
+      <div class="step-num">Step 01</div>
+      <div class="step-title">Brief the system</div>
+      <div class="step-body">Before the hearing, your second chair enters case context: jurisdiction, case type, defense theory, key witnesses, and the legal issues you're watching. 90 seconds.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">Step 02</div>
+      <div class="step-title">Capture the record</div>
+      <div class="step-body">As testimony proceeds, the operator enters statements into the live transcript panel and tags each speaker. The record builds in real time alongside the proceedings.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">Step 03</div>
+      <div class="step-title">Analyze on demand</div>
+      <div class="step-body">Hit Analyze after any statement. Within seconds, objections, strategic angles, and case law surface — all filtered through your specific case context and jurisdiction.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">Step 04</div>
+      <div class="step-title">Act on it</div>
+      <div class="step-body">The second chair surfaces the card. Lead counsel makes the call. The right information reaches the right person before the window closes.</div>
+    </div>
+  </div>
+</section>
+
+<!-- QUOTE -->
+<div class="quote-section reveal">
+  <span class="quote-mark">"</span>
+  <p class="quote-text">The best litigators aren't the ones who know the most law. They're the ones who can access the right law at exactly the right moment.</p>
+  <div class="quote-attr">Trial Attorney, 20+ years</div>
+</div>
+
+<!-- URGENCY -->
+<div class="urgency-band reveal">
+  <div class="urgency-item"><div class="urgency-dot"></div>Limited beta seats available</div>
+  <div class="urgency-item"><div class="urgency-dot"></div>Florida defense teams only — expanding Q3</div>
+  <div class="urgency-item"><div class="urgency-dot"></div>Founding member pricing locked at signup</div>
+  <div class="urgency-item"><div class="urgency-dot"></div>No credit card required</div>
+</div>
+
+<!-- WAITLIST -->
+<section class="waitlist-section" id="waitlist">
+  <div class="waitlist-glow"></div>
+  <h2 class="waitlist-title reveal">Get early access.<br><em>Before your opposition does.</em></h2>
+  <p class="waitlist-sub reveal">Join the waitlist. We'll reach out to schedule a 15-minute onboarding call.</p>
+  <div class="waitlist-form reveal" id="wlForm">
+    <input class="waitlist-input" id="wlEmail" type="email" placeholder="your@firm.com" autocomplete="email">
+    <button class="waitlist-btn" id="wlBtn" onclick="submitWaitlist()">Request Access →</button>
+  </div>
+  <p class="waitlist-fine reveal" id="wlFine">Defense counsel and litigation support teams only · No spam · Unsubscribe anytime</p>
+  <div class="waitlist-success" id="wlSuccess">
+    <div class="success-icon">✓</div>
+    <div class="success-title">You're on the list.</div>
+    <div class="success-body">We'll be in touch within 48 hours to schedule your onboarding call.</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">2ndChair</div>
+  <ul class="footer-links">
+    <li><a href="app.html">Client Login</a></li>
+    <li><a href="#waitlist">Request Access</a></li>
+    <li><a href="PRIVACY.md">Privacy</a></li>
+  </ul>
+  <div class="footer-copy">© 2026 · Built for defense counsel · Not legal advice</div>
+</footer>
+
+<script>
+// Nav scroll
+const nav=document.getElementById('nav');
+window.addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>60),{passive:true});
+
+// Reveal on scroll
+const obs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting)return;
+    e.target.classList.add('visible');
+    const kids=[...e.target.querySelectorAll('.problem-card,.feature,.step')];
+    kids.forEach((c,i)=>{
+      c.style.cssText=`opacity:0;transform:translateY(16px);transition:opacity .6s ${i*80}ms,transform .6s ${i*80}ms`;
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{c.style.opacity='1';c.style.transform='translateY(0)'}));
+    });
+  });
+},{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+// Waitlist submit
+function submitWaitlist(){
+  const email=document.getElementById('wlEmail').value.trim();
+  if(!email||!email.includes('@')){
+    const inp=document.getElementById('wlEmail');
+    inp.style.borderColor='rgba(192,57,43,.6)';
+    inp.focus();
+    setTimeout(()=>inp.style.borderColor='',1400);
+    return;
+  }
+  const btn=document.getElementById('wlBtn');
+  btn.disabled=true;btn.textContent='Submitting…';
+  // TODO: replace with Netlify Forms or Formspree endpoint
+  setTimeout(()=>{
+    document.getElementById('wlForm').classList.add('off');
+    document.getElementById('wlFine').classList.add('off');
+    document.getElementById('wlSuccess').classList.add('on');
+  },800);
+}
+document.getElementById('wlEmail').addEventListener('keydown',e=>{if(e.key==='Enter')submitWaitlist()});
+</script>
+</body>
+</html>

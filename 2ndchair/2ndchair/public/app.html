@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2ndChair — Litigation Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Mono:wght@300;400;500&family=Crimson+Pro:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ── THEME VARIABLES ── */
+[data-theme="dark"]{
+  --bg:#0e0c0a;
+  --bg2:#141210;
+  --bg3:#1a1814;
+  --bg4:#201e1a;
+  --border:rgba(255,255,255,.07);
+  --border2:rgba(255,255,255,.04);
+  --text:rgba(245,240,232,.88);
+  --text2:rgba(245,240,232,.5);
+  --text3:rgba(245,240,232,.25);
+  --gold:#c9a84c;
+  --gold-dim:#a8883a;
+  --gold-pale:rgba(201,168,76,.1);
+  --red:#e05c5c;
+  --red-pale:rgba(224,92,92,.1);
+  --green:#5cba8a;
+}
+[data-theme="light"]{
+  --bg:#f5f0e8;
+  --bg2:#ede8de;
+  --bg3:#e5dfd3;
+  --bg4:#ddd8cc;
+  --border:rgba(10,10,10,.1);
+  --border2:rgba(10,10,10,.06);
+  --text:rgba(10,10,10,.88);
+  --text2:rgba(10,10,10,.5);
+  --text3:rgba(10,10,10,.25);
+  --gold:#9a7430;
+  --gold-dim:#7a5c20;
+  --gold-pale:rgba(154,116,48,.1);
+  --red:#c04040;
+  --red-pale:rgba(192,64,64,.1);
+  --green:#2a8a5a;
+}
+
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'DM Mono',monospace;
+  background:var(--bg);color:var(--text);
+  transition:background .25s, color .25s;
+}
+
+/* ── LOGIN ── */
+.login-screen{
+  position:fixed;inset:0;z-index:1000;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+}
+.login-screen.hidden{display:none}
+.login-card{
+  width:340px;
+  border:1px solid var(--border);
+  background:var(--bg2);
+}
+.login-top{
+  padding:28px 32px 20px;
+  border-bottom:1px solid var(--border);
+  text-align:center;
+}
+.login-logo{
+  font-family:'Playfair Display',serif;
+  font-size:1.6rem;font-weight:700;color:var(--gold);
+}
+.login-logo span{color:var(--text2);font-family:'DM Mono',monospace;font-weight:300;font-size:1rem}
+.login-tagline{
+  font-size:.5rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--text3);margin-top:4px;
+}
+.login-body{padding:24px 32px 28px}
+.login-field{margin-bottom:14px}
+.login-field label{
+  display:block;font-size:.5rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--text2);margin-bottom:6px;
+}
+.login-field input{
+  width:100%;background:var(--bg3);
+  border:1px solid var(--border);
+  color:var(--text);font-family:'DM Mono',monospace;font-size:.75rem;
+  padding:10px 12px;outline:none;
+  transition:border-color .2s;
+}
+.login-field input:focus{border-color:var(--gold-dim)}
+.login-field input::placeholder{color:var(--text3)}
+.login-error{
+  display:none;font-size:.6rem;color:var(--red);
+  margin-bottom:12px;line-height:1.4;
+}
+.login-error.on{display:block}
+.login-submit{
+  width:100%;background:var(--gold);color:#0a0a0a;
+  font-family:'DM Mono',monospace;font-size:.6rem;
+  letter-spacing:.1em;text-transform:uppercase;
+  border:none;padding:12px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:filter .2s;
+}
+.login-submit:hover{filter:brightness(1.1)}
+.login-submit:disabled{opacity:.5;cursor:not-allowed}
+.login-spinner{
+  width:12px;height:12px;
+  border:2px solid rgba(10,10,10,.2);border-top-color:#0a0a0a;
+  border-radius:50%;animation:spin .7s linear infinite;display:none;
+}
+.login-spinner.on{display:block}
+.login-footer{
+  padding:12px 32px;border-top:1px solid var(--border);
+  font-size:.48rem;letter-spacing:.08em;color:var(--text3);
+  text-align:center;line-height:1.5;
+}
+
+/* ── TERMS OVERLAY ── */
+.overlay{
+  position:fixed;inset:0;z-index:900;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+}
+.overlay.hidden{display:none}
+.terms-modal,.session-modal{
+  background:var(--bg2);border:1px solid var(--border);
+  width:560px;max-height:80vh;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.modal-header{
+  padding:20px 24px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.modal-title{
+  font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);
+}
+.modal-body{
+  padding:24px;overflow-y:auto;flex:1;
+  font-size:.65rem;line-height:1.7;color:var(--text2);
+}
+.modal-body p{margin-bottom:12px}
+.modal-body h4{
+  font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--text);margin:16px 0 6px;
+}
+.modal-footer{
+  padding:16px 24px;border-top:1px solid var(--border);
+  display:flex;justify-content:flex-end;gap:12px;
+  flex-shrink:0;
+}
+.btn-modal{
+  font-family:'DM Mono',monospace;font-size:.55rem;
+  letter-spacing:.1em;text-transform:uppercase;
+  padding:10px 20px;border:1px solid var(--border);
+  background:none;color:var(--text2);cursor:pointer;
+  transition:all .2s;
+}
+.btn-modal.primary{
+  background:var(--gold);color:#0a0a0a;border-color:var(--gold);
+}
+.btn-modal:hover{border-color:var(--gold);color:var(--text)}
+.btn-modal.primary:hover{filter:brightness(1.1)}
+
+/* ── SESSION SETUP ── */
+.session-modal{width:620px}
+.session-modal .modal-body{padding:20px 24px}
+.prev-session-banner{
+  background:var(--gold-pale);border:1px solid rgba(201,168,76,.2);
+  padding:10px 14px;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:.55rem;letter-spacing:.08em;color:var(--gold);
+}
+.prev-session-banner.hidden{display:none}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-group{margin-bottom:12px}
+.form-group label{
+  display:block;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--text2);margin-bottom:5px;
+}
+.form-group input,
+.form-group select,
+.form-group textarea{
+  width:100%;background:var(--bg3);
+  border:1px solid var(--border);
+  color:var(--text);font-family:'DM Mono',monospace;font-size:.65rem;
+  padding:9px 11px;outline:none;
+  transition:border-color .2s;
+  appearance:none;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus{border-color:var(--gold-dim)}
+.form-group input::placeholder,
+.form-group textarea::placeholder{color:var(--text3)}
+.form-group select option{background:var(--bg3)}
+.form-group textarea{resize:vertical;min-height:64px;font-size:.6rem}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.pill{
+  font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 10px;border:1px solid var(--border);
+  cursor:pointer;color:var(--text2);background:var(--bg3);
+  transition:all .15s;user-select:none;
+}
+.pill:hover{border-color:var(--gold-dim);color:var(--text)}
+.pill.selected{background:var(--gold-pale);border-color:var(--gold);color:var(--gold)}
+.section-divider{
+  font-size:.5rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--text3);padding:12px 0 6px;
+  border-bottom:1px solid var(--border2);margin-bottom:10px;
+}
+
+/* ── APP CHROME ── */
+.app{display:flex;flex-direction:column;height:100vh}
+.app.hidden{display:none}
+
+.topbar{
+  display:flex;align-items:center;
+  padding:0 16px;height:44px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg2);
+  flex-shrink:0;gap:12px;
+}
+.topbar-logo{
+  font-family:'Playfair Display',serif;
+  font-size:1rem;font-weight:700;color:var(--gold);
+  letter-spacing:-.02em;white-space:nowrap;
+}
+.topbar-logo span{color:var(--text3);font-family:'DM Mono',monospace;font-weight:300;font-size:.75rem}
+.topbar-sep{width:1px;height:20px;background:var(--border);flex-shrink:0}
+.topbar-case{
+  font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  flex:1;
+}
+.topbar-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.topbar-btn{
+  font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text2);background:none;border:1px solid var(--border);
+  padding:5px 10px;cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.topbar-btn:hover{border-color:var(--gold-dim);color:var(--text)}
+.topbar-btn.active{border-color:var(--red);color:var(--red)}
+
+/* ── MAIN LAYOUT ── */
+.main{display:flex;flex:1;overflow:hidden}
+
+/* ── TRANSCRIPT PANEL ── */
+.transcript-panel{
+  width:360px;min-width:260px;
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  flex-shrink:0;
+}
+.panel-header{
+  padding:10px 14px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg2);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.panel-title{
+  font-size:.5rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text2);
+}
+.panel-meta{font-size:.5rem;color:var(--text3)}
+.transcript-feed{
+  flex:1;overflow-y:auto;padding:12px;
+  display:flex;flex-direction:column;gap:2px;
+}
+.tx-entry{
+  padding:8px 10px;
+  border-left:2px solid var(--border2);
+  transition:border-color .2s;
+}
+.tx-entry:hover{border-left-color:var(--border)}
+.tx-meta{
+  font-size:.45rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text3);margin-bottom:3px;
+  display:flex;align-items:center;gap:8px;
+}
+.tx-speaker{color:var(--text2)}
+.tx-badge{
+  font-size:.4rem;letter-spacing:.06em;padding:1px 5px;
+  background:var(--gold-pale);color:var(--gold);
+}
+.tx-text{font-size:.68rem;color:var(--text);line-height:1.5;font-family:'Crimson Pro',serif}
+
+.mic-controls{
+  padding:12px 14px;
+  border-top:1px solid var(--border);
+  background:var(--bg2);
+  flex-shrink:0;
+}
+.mic-btn{
+  width:100%;
+  font-family:'DM Mono',monospace;font-size:.55rem;
+  letter-spacing:.1em;text-transform:uppercase;
+  padding:10px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--text2);
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.mic-btn:hover{border-color:var(--gold-dim);color:var(--text)}
+.mic-btn.recording{border-color:var(--red);color:var(--red);background:var(--red-pale)}
+.mic-btn.recording:hover{filter:brightness(1.1)}
+.mic-dot{
+  width:7px;height:7px;border-radius:50%;background:var(--red);
+  animation:pulse 1.2s ease-in-out infinite;display:none;
+}
+.mic-btn.recording .mic-dot{display:block}
+.mic-status{
+  font-size:.48rem;letter-spacing:.08em;color:var(--text3);
+  text-align:center;margin-top:6px;min-height:14px;
+}
+.speaker-tags{margin-top:10px;display:flex;flex-direction:column;gap:4px}
+.speaker-tag-row{
+  display:flex;align-items:center;gap:6px;
+}
+.speaker-tag-label{
+  font-size:.48rem;letter-spacing:.08em;color:var(--text3);min-width:60px;
+}
+.speaker-tag-select{
+  flex:1;background:var(--bg3);border:1px solid var(--border);
+  color:var(--text2);font-family:'DM Mono',monospace;font-size:.5rem;
+  padding:4px 6px;outline:none;cursor:pointer;appearance:none;
+}
+.speaker-tag-select:focus{border-color:var(--gold-dim)}
+
+/* ── MANUAL ENTRY ── */
+.manual-entry{
+  padding:10px 14px;
+  border-top:1px solid var(--border);
+  background:var(--bg2);
+  flex-shrink:0;
+}
+.manual-row{display:flex;gap:6px}
+.manual-speaker{
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--text2);font-family:'DM Mono',monospace;font-size:.5rem;
+  padding:8px;width:110px;outline:none;appearance:none;cursor:pointer;
+}
+.manual-speaker:focus{border-color:var(--gold-dim)}
+.manual-input{
+  flex:1;background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);font-family:'Crimson Pro',serif;font-size:.85rem;
+  padding:8px 10px;outline:none;
+}
+.manual-input:focus{border-color:var(--gold-dim)}
+.manual-input::placeholder{color:var(--text3)}
+.manual-submit{
+  background:var(--gold-pale);border:1px solid rgba(201,168,76,.2);
+  color:var(--gold);font-family:'DM Mono',monospace;font-size:.55rem;
+  padding:8px 12px;cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.manual-submit:hover{background:var(--gold);color:#0a0a0a}
+
+/* ── ANALYSIS PANEL ── */
+.analysis-panel{
+  flex:1;display:flex;flex-direction:column;overflow:hidden;
+}
+.analysis-feed{
+  flex:1;overflow-y:auto;padding:16px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.analysis-empty{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:8px;text-align:center;padding:40px;
+}
+.analysis-empty-icon{font-size:2rem;opacity:.2}
+.analysis-empty-text{
+  font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text3);line-height:1.8;
+}
+
+.card{
+  background:var(--bg2);border:1px solid var(--border);
+  padding:14px 16px;
+  animation:slideIn .25s ease;
+}
+.card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:8px;
+}
+.card-badge{
+  font-size:.45rem;letter-spacing:.1em;text-transform:uppercase;
+  padding:3px 8px;
+}
+.card-badge.objection,.card-badge.warning{
+  background:var(--red-pale);color:var(--red);
+}
+.card-badge.strategy,.card-badge.rebuttal{
+  background:var(--gold-pale);color:var(--gold);
+}
+.card-badge.caselaw,.card-badge.analysis{
+  background:var(--bg3);color:var(--text2);
+}
+.card-time{font-size:.45rem;color:var(--text3)}
+.card-body{
+  font-family:'Crimson Pro',serif;font-size:.9rem;
+  color:var(--text);line-height:1.55;
+}
+.card-action{
+  margin-top:10px;padding-top:10px;
+  border-top:1px solid var(--border2);
+  font-size:.5rem;letter-spacing:.08em;
+  color:var(--text2);
+}
+
+/* Time divider */
+.time-divider{
+  display:flex;align-items:center;gap:10px;
+  font-size:.45rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);
+  padding:4px 0;
+}
+.time-divider::before,.time-divider::after{
+  content:'';flex:1;height:1px;background:var(--border2);
+}
+
+/* ── QUICK ACTIONS ── */
+.quick-actions{
+  padding:10px 16px;
+  border-top:1px solid var(--border);
+  background:var(--bg2);
+  flex-shrink:0;
+  display:flex;gap:6px;flex-wrap:wrap;
+}
+.qa-btn{
+  font-size:.48rem;letter-spacing:.08em;text-transform:uppercase;
+  padding:7px 12px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--text2);
+  cursor:pointer;transition:all .15s;
+}
+.qa-btn:hover{border-color:var(--gold-dim);color:var(--text)}
+
+/* ── LOADING ── */
+.card-loading{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 16px;
+  background:var(--bg2);border:1px solid var(--border2);
+  font-size:.55rem;letter-spacing:.08em;color:var(--text3);
+}
+.loading-dots span{
+  display:inline-block;width:4px;height:4px;border-radius:50%;
+  background:var(--gold);opacity:.4;
+  animation:blink 1.2s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2){animation-delay:.2s}
+.loading-dots span:nth-child(3){animation-delay:.4s}
+
+/* ── SCROLLBARS ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+/* ── ANIMATIONS ── */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
+@keyframes slideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-top">
+      <div class="login-logo">2ndChair<span>.net</span></div>
+      <div class="login-tagline">Litigation Command Center</div>
+    </div>
+    <div class="login-body">
+      <div class="login-error" id="loginError"></div>
+      <div class="login-field">
+        <label>Access Password</label>
+        <input type="password" id="loginPassword" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="login-submit" id="loginBtn" onclick="doLogin()">
+        <span id="loginBtnTxt">Sign In</span>
+        <div class="login-spinner" id="loginSpinner"></div>
+      </button>
+    </div>
+    <div class="login-footer">Defense counsel and litigation support only.<br>All sessions encrypted.</div>
+  </div>
+</div>
+
+<!-- ══ TERMS OVERLAY ══ -->
+<div class="overlay hidden" id="termsOverlay">
+  <div class="terms-modal">
+    <div class="modal-header">
+      <div class="modal-title">Terms of Use & Disclaimer</div>
+    </div>
+    <div class="modal-body">
+      <p>2ndChair is an AI-assisted legal research and analysis tool designed to support defense counsel during litigation. By using this platform, you agree to the following terms.</p>
+      <h4>Not Legal Advice</h4>
+      <p>2ndChair provides AI-generated analysis for informational and research purposes only. Outputs do not constitute legal advice and should not be relied upon as a substitute for professional legal judgment. All analysis must be reviewed and verified by a licensed attorney before use.</p>
+      <h4>Attorney Responsibility</h4>
+      <p>The supervising attorney remains solely responsible for all legal strategy, objections made, and arguments presented in court. AI-generated suggestions are tools to assist counsel, not replace counsel's professional judgment.</p>
+      <h4>Confidentiality</h4>
+      <p>Session content is processed through secure API connections. Prompt content is not logged or stored by 2ndChair systems. Standard attorney-client privilege protections should be considered when inputting case information.</p>
+      <h4>Accuracy</h4>
+      <p>AI-generated case law citations and legal analysis may contain errors. Always verify citations independently before relying on them.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal primary" onclick="acceptTerms()">I Understand & Accept</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SESSION SETUP OVERLAY ══ -->
+<div class="overlay hidden" id="sessionOverlay">
+  <div class="session-modal">
+    <div class="modal-header">
+      <div class="modal-title">⚖ Case Setup</div>
+    </div>
+    <div class="modal-body" id="sessionModalBody">
+      <!-- Previous session banner -->
+      <div class="prev-session-banner hidden" id="prevBanner">
+        <span>↺ Previous session detected</span>
+        <button class="btn-modal" onclick="loadPrevSession()" style="padding:4px 12px;font-size:.48rem">Load Previous</button>
+      </div>
+
+      <div class="section-divider">Jurisdiction</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>State</label>
+          <select id="sState">
+            <option value="">Select state</option>
+            <option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option>
+            <option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option>
+            <option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option>
+            <option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option>
+            <option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option>
+            <option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option>
+            <option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option>
+            <option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option>
+            <option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option>
+            <option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option>
+            <option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option>
+            <option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option>
+            <option>Wisconsin</option><option>Wyoming</option><option>Federal</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>County / District</label>
+          <input type="text" id="sCounty" placeholder="e.g. Miami-Dade">
+        </div>
+      </div>
+
+      <div class="section-divider">Case</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Case Name</label>
+          <input type="text" id="sCaseName" placeholder="State v. Smith">
+        </div>
+        <div class="form-group">
+          <label>Judge</label>
+          <input type="text" id="sJudge" placeholder="Hon. Jane Doe">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Case Type</label>
+        <div class="pills" id="caseTypePills">
+          <div class="pill" data-val="Drug Offense">Drug Offense</div>
+          <div class="pill" data-val="DUI/DWI">DUI/DWI</div>
+          <div class="pill" data-val="Assault">Assault</div>
+          <div class="pill" data-val="Homicide">Homicide</div>
+          <div class="pill" data-val="Theft/Robbery">Theft/Robbery</div>
+          <div class="pill" data-val="White Collar">White Collar</div>
+          <div class="pill" data-val="Sex Offense">Sex Offense</div>
+          <div class="pill" data-val="Federal">Federal</div>
+          <div class="pill" data-val="Juvenile">Juvenile</div>
+          <div class="pill" data-val="Civil">Civil</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Trial Phase</label>
+        <div class="pills" id="phasePills">
+          <div class="pill" data-val="Voir Dire">Voir Dire</div>
+          <div class="pill" data-val="Opening">Opening</div>
+          <div class="pill" data-val="Prosecution Direct">Prosecution Direct</div>
+          <div class="pill" data-val="Cross-Examination">Cross-Examination</div>
+          <div class="pill" data-val="Defense Direct">Defense Direct</div>
+          <div class="pill" data-val="Closing">Closing</div>
+          <div class="pill" data-val="Sentencing">Sentencing</div>
+          <div class="pill" data-val="Motion Hearing">Motion Hearing</div>
+        </div>
+      </div>
+
+      <div class="section-divider">People</div>
+      <div class="form-group">
+        <label>Witnesses (comma-separated)</label>
+        <input type="text" id="sWitnesses" placeholder="Officer J. Smith, Dr. A. Jones, M. Santos (alibi)">
+      </div>
+
+      <div class="section-divider">Case Facts</div>
+      <div class="form-group">
+        <label>Key Facts & Defense Theory</label>
+        <textarea id="sFacts" placeholder="Summarize the key facts of the case and your defense theory. The more context you provide, the more accurate the analysis."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal" onclick="clearSession()">Clear</button>
+      <button class="btn-modal primary" onclick="startSession()">Start Session →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div class="app hidden" id="app">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-logo">2ndChair<span>.net</span></div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-case" id="topbarCase">No case loaded</div>
+    <div class="topbar-actions">
+      <button class="topbar-btn" onclick="openSessionSetup()">⚙ Case</button>
+      <button class="topbar-btn" id="themeBtn" onclick="toggleTheme()">☀ Light</button>
+      <button class="topbar-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- Transcript Panel -->
+    <div class="transcript-panel">
+      <div class="panel-header">
+        <div class="panel-title">⬤ Live Transcript</div>
+        <div class="panel-meta" id="txCount">0 statements</div>
+      </div>
+
+      <div class="transcript-feed" id="transcriptFeed">
+      </div>
+
+      <!-- Mic controls -->
+      <div class="mic-controls">
+        <button class="mic-btn" id="micBtn" onclick="toggleMic()">
+          <div class="mic-dot"></div>
+          <span id="micBtnTxt">🎙 Start Mic</span>
+        </button>
+        <div class="mic-status" id="micStatus">Deepgram live transcription</div>
+        <div class="speaker-tags hidden" id="speakerTags"></div>
+      </div>
+
+      <!-- Manual entry -->
+      <div class="manual-entry">
+        <div class="manual-row">
+          <select class="manual-speaker" id="manualSpeaker">
+            <option value="Defense">Defense</option>
+            <option value="Prosecutor">Prosecutor</option>
+            <option value="Judge">Judge</option>
+            <option value="Witness">Witness</option>
+            <option value="Other">Other</option>
+          </select>
+          <input class="manual-input" id="manualInput" type="text" placeholder="Type testimony or statement…" onkeydown="if(event.key==='Enter')addManualEntry()">
+          <button class="manual-submit" onclick="addManualEntry()">Add →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analysis Panel -->
+    <div class="analysis-panel">
+      <div class="panel-header">
+        <div class="panel-title">⚡ 2ndChair Analysis</div>
+        <div class="panel-meta" id="cardCount">0 responses</div>
+      </div>
+
+      <div class="analysis-feed" id="analysisFeed">
+        <div class="analysis-empty" id="analysisEmpty">
+          <div class="analysis-empty-icon">⚖</div>
+          <div class="analysis-empty-text">
+            Enter case context to begin.<br>
+            Add testimony above or start the mic.<br>
+            Analysis appears here in real time.
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <button class="qa-btn" onclick="quickAction('Summarize all testimony so far and identify the strongest defense arguments.')">Summarize</button>
+        <button class="qa-btn" onclick="quickAction('What are the top 3 cross-examination angles based on testimony so far?')">Cross Angles</button>
+        <button class="qa-btn" onclick="quickAction('Identify any procedural or evidentiary issues raised so far.')">Evidentiary Issues</button>
+        <button class="qa-btn" onclick="quickAction('What closing argument points are supported by the testimony so far?')">Closing Points</button>
+        <button class="qa-btn" onclick="quickAction('Are there any Brady or Giglio issues apparent from the testimony?')">Brady/Giglio</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════
+   PERSISTENCE KEYS
+════════════════════════════════════════ */
+const KEY_AUTH     = '2ndchair-auth';
+const KEY_TERMS    = '2ndchair-terms';
+const KEY_THEME    = '2ndchair-theme';
+const KEY_CONTEXT  = '2ndchair-context';
+const KEY_SESSION  = '2ndchair-prev-session';
+
+/* ════════════════════════════════════════
+   THEME — persistent
+════════════════════════════════════════ */
+let currentTheme = localStorage.getItem(KEY_THEME) || 'dark';
+document.documentElement.setAttribute('data-theme', currentTheme);
+
+function toggleTheme() {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  localStorage.setItem(KEY_THEME, currentTheme);
+  document.getElementById('themeBtn').textContent = currentTheme === 'dark' ? '☀ Light' : '☾ Dark';
+}
+// Set initial button label
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = currentTheme === 'dark' ? '☀ Light' : '☾ Dark';
+});
+
+/* ════════════════════════════════════════
+   AUTH
+════════════════════════════════════════ */
+let authToken = null;
+
+// Restore session
+try {
+  const stored = sessionStorage.getItem(KEY_AUTH);
+  if (stored) {
+    const parsed = JSON.parse(stored);
+    if (parsed.token && parsed.exp && Date.now() < parsed.exp) {
+      authToken = parsed.token;
+      document.getElementById('loginScreen').classList.add('hidden');
+      // Show terms or app
+      if (localStorage.getItem(KEY_TERMS) === '1') {
+        showApp();
+      } else {
+        document.getElementById('termsOverlay').classList.remove('hidden');
+      }
+    } else {
+      sessionStorage.removeItem(KEY_AUTH);
+    }
+  }
+} catch(e) {}
+
+async function doLogin() {
+  const password = document.getElementById('loginPassword').value;
+  const errEl    = document.getElementById('loginError');
+  const btn      = document.getElementById('loginBtn');
+  const spinner  = document.getElementById('loginSpinner');
+  const btnTxt   = document.getElementById('loginBtnTxt');
+
+  if (!password) {
+    errEl.textContent = 'Please enter the access password.';
+    errEl.classList.add('on'); return;
+  }
+
+  btn.disabled = true; spinner.classList.add('on'); btnTxt.textContent = 'Signing in…';
+  errEl.classList.remove('on');
+
+  try {
+    const res  = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      errEl.textContent = data.error || 'Incorrect password.';
+      errEl.classList.add('on');
+      document.getElementById('loginPassword').value = '';
+      return;
+    }
+
+    authToken = data.token;
+    try {
+      sessionStorage.setItem(KEY_AUTH, JSON.stringify({
+        token: data.token,
+        exp: Date.now() + 12 * 60 * 60 * 1000
+      }));
+    } catch(e) {}
+
+    document.getElementById('loginScreen').classList.add('hidden');
+
+    if (localStorage.getItem(KEY_TERMS) === '1') {
+      showApp();
+    } else {
+      document.getElementById('termsOverlay').classList.remove('hidden');
+    }
+
+  } catch(err) {
+    errEl.textContent = 'Connection error. Please try again.';
+    errEl.classList.add('on');
+  } finally {
+    btn.disabled = false; spinner.classList.remove('on'); btnTxt.textContent = 'Sign In';
+  }
+}
+
+function doLogout() {
+  try { sessionStorage.removeItem(KEY_AUTH); } catch(e) {}
+  authToken = null;
+  window.location.reload();
+}
+
+/* ════════════════════════════════════════
+   TERMS
+════════════════════════════════════════ */
+function acceptTerms() {
+  localStorage.setItem(KEY_TERMS, '1');
+  document.getElementById('termsOverlay').classList.add('hidden');
+  showApp();
+}
+
+/* ════════════════════════════════════════
+   SESSION SETUP — persistent context
+════════════════════════════════════════ */
+let caseContext = {};
+
+function showApp() {
+  document.getElementById('app').classList.remove('hidden');
+  loadContext();
+  // Check for previous session
+  const prev = localStorage.getItem(KEY_SESSION);
+  if (prev) {
+    try {
+      const d = JSON.parse(prev);
+      if (d.caseName || d.state) {
+        document.getElementById('prevBanner').classList.remove('hidden');
+      }
+    } catch(e) {}
+  }
+  // If no context set yet, open session setup
+  if (!caseContext.state && !caseContext.caseName) {
+    openSessionSetup();
+  } else {
+    updateTopbar();
+  }
+}
+
+function openSessionSetup() {
+  populateSessionForm();
+  document.getElementById('sessionOverlay').classList.remove('hidden');
+}
+
+function loadContext() {
+  try {
+    const raw = localStorage.getItem(KEY_CONTEXT);
+    if (raw) caseContext = JSON.parse(raw);
+  } catch(e) {}
+}
+
+function saveContext() {
+  try { localStorage.setItem(KEY_CONTEXT, JSON.stringify(caseContext)); } catch(e) {}
+}
+
+function populateSessionForm() {
+  if (!caseContext) return;
+  if (caseContext.state)    setVal('sState', caseContext.state);
+  if (caseContext.county)   setVal('sCounty', caseContext.county);
+  if (caseContext.caseName) setVal('sCaseName', caseContext.caseName);
+  if (caseContext.judge)    setVal('sJudge', caseContext.judge);
+  if (caseContext.witnesses)setVal('sWitnesses', caseContext.witnesses);
+  if (caseContext.facts)    setVal('sFacts', caseContext.facts);
+  // Pills
+  if (caseContext.caseType) {
+    document.querySelectorAll('#caseTypePills .pill').forEach(p => {
+      if (p.dataset.val === caseContext.caseType) p.classList.add('selected');
+    });
+  }
+  if (caseContext.phase) {
+    document.querySelectorAll('#phasePills .pill').forEach(p => {
+      if (p.dataset.val === caseContext.phase) p.classList.add('selected');
+    });
+  }
+}
+
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
+
+function startSession() {
+  caseContext = {
+    state:     document.getElementById('sState').value,
+    county:    document.getElementById('sCounty').value,
+    caseName:  document.getElementById('sCaseName').value,
+    judge:     document.getElementById('sJudge').value,
+    witnesses: document.getElementById('sWitnesses').value,
+    facts:     document.getElementById('sFacts').value,
+    caseType:  document.querySelector('#caseTypePills .pill.selected')?.dataset.val || '',
+    phase:     document.querySelector('#phasePills .pill.selected')?.dataset.val || '',
+  };
+  saveContext();
+  // Save as prev session
+  try { localStorage.setItem(KEY_SESSION, JSON.stringify(caseContext)); } catch(e) {}
+  document.getElementById('sessionOverlay').classList.add('hidden');
+  updateTopbar();
+}
+
+function clearSession() {
+  document.querySelectorAll('.pill.selected').forEach(p => p.classList.remove('selected'));
+  ['sState','sCounty','sCaseName','sJudge','sWitnesses','sFacts'].forEach(id => setVal(id, ''));
+  caseContext = {};
+  saveContext();
+}
+
+function loadPrevSession() {
+  try {
+    const raw = localStorage.getItem(KEY_SESSION);
+    if (raw) {
+      caseContext = JSON.parse(raw);
+      saveContext();
+      populateSessionForm();
+      document.getElementById('prevBanner').classList.add('hidden');
+    }
+  } catch(e) {}
+}
+
+function updateTopbar() {
+  const parts = [];
+  if (caseContext.state) parts.push(caseContext.state);
+  if (caseContext.county) parts.push(caseContext.county);
+  if (caseContext.caseType) parts.push(caseContext.caseType);
+  if (caseContext.phase) parts.push(caseContext.phase);
+  document.getElementById('topbarCase').textContent = parts.length
+    ? parts.join(' · ')
+    : (caseContext.caseName || 'Case loaded');
+}
+
+// Pill toggle
+document.querySelectorAll('#caseTypePills .pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('#caseTypePills .pill').forEach(x => x.classList.remove('selected'));
+    p.classList.add('selected');
+  });
+});
+document.querySelectorAll('#phasePills .pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('#phasePills .pill').forEach(x => x.classList.remove('selected'));
+    p.classList.add('selected');
+  });
+});
+
+/* ════════════════════════════════════════
+   TRANSCRIPT
+════════════════════════════════════════ */
+let transcript = [];
+let txCount    = 0;
+let cardCount  = 0;
+const sessionId = Math.random().toString(36).slice(2);
+
+function addEntry(speaker, text, analyze = true) {
+  const ts = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  const entry = { speaker, text, ts, id: ++txCount };
+  transcript.push(entry);
+
+  const feed = document.getElementById('transcriptFeed');
+  const div  = document.createElement('div');
+  div.className = 'tx-entry';
+  div.innerHTML = `
+    <div class="tx-meta">
+      <span class="tx-speaker">${escHtml(speaker)}</span>
+      <span>${ts}</span>
+    </div>
+    <div class="tx-text">${escHtml(text)}</div>
+  `;
+  feed.appendChild(div);
+  feed.scrollTop = feed.scrollHeight;
+  document.getElementById('txCount').textContent = `${txCount} statement${txCount!==1?'s':''}`;
+
+  if (analyze && text.trim().length > 8) {
+    analyzeEntry(entry);
+  }
+}
+
+function addManualEntry() {
+  const speaker = document.getElementById('manualSpeaker').value;
+  const input   = document.getElementById('manualInput');
+  const text    = input.value.trim();
+  if (!text) return;
+  addEntry(speaker, text);
+  input.value = '';
+  input.focus();
+}
+
+/* ════════════════════════════════════════
+   ANALYSIS
+════════════════════════════════════════ */
+function buildSystemPrompt() {
+  const ctx = caseContext;
+  const parts = ['You are 2ndChair, a real-time AI litigation assistant for defense attorneys.'];
+  parts.push('Analyze testimony and provide concise, actionable legal analysis.');
+  parts.push('Format each response as JSON with this structure:');
+  parts.push('{"cards":[{"type":"objection|warning|strategy|rebuttal|caselaw|analysis","title":"Short title","body":"Analysis text","action":"Optional next step"}]}');
+  parts.push('Return 1-3 cards maximum. Be concise and immediately actionable. No preamble, just JSON.');
+
+  if (ctx.state)     parts.push(`Jurisdiction: ${ctx.state}${ctx.county ? ', ' + ctx.county : ''}`);
+  if (ctx.caseType)  parts.push(`Case type: ${ctx.caseType}`);
+  if (ctx.phase)     parts.push(`Current phase: ${ctx.phase}`);
+  if (ctx.caseName)  parts.push(`Case: ${ctx.caseName}`);
+  if (ctx.judge)     parts.push(`Judge: ${ctx.judge}`);
+  if (ctx.witnesses) parts.push(`Key witnesses: ${ctx.witnesses}`);
+  if (ctx.facts)     parts.push(`Case facts and defense theory: ${ctx.facts}`);
+
+  return parts.join('\n');
+}
+
+async function analyzeEntry(entry) {
+  const feed = document.getElementById('analysisFeed');
+
+  // Remove empty state
+  const empty = document.getElementById('analysisEmpty');
+  if (empty) empty.remove();
+
+  // Add time divider periodically
+  if (cardCount > 0 && cardCount % 5 === 0) {
+    const div = document.createElement('div');
+    div.className = 'time-divider';
+    div.textContent = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    feed.appendChild(div);
+  }
+
+  // Loading card
+  const loader = document.createElement('div');
+  loader.className = 'card-loading';
+  loader.innerHTML = `Analyzing… <div class="loading-dots"><span></span><span></span><span></span></div>`;
+  feed.appendChild(loader);
+  feed.scrollTop = feed.scrollHeight;
+
+  try {
+    const recentTx = transcript.slice(-8).map(t => `${t.speaker}: ${t.text}`).join('\n');
+    const prompt   = `Recent testimony:\n${recentTx}\n\nLatest statement from ${entry.speaker}:\n"${entry.text}"\n\nProvide defense analysis.`;
+
+    const res  = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Auth-Token': authToken },
+      body: JSON.stringify({
+        sessionId,
+        system: buildSystemPrompt(),
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    loader.remove();
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      renderErrorCard(feed, data.error || `Error ${res.status}`);
+      return;
+    }
+
+    const data = await res.json();
+    renderCards(feed, data.content);
+
+  } catch(err) {
+    loader.remove();
+    renderErrorCard(feed, 'Connection error. Please try again.');
+  }
+}
+
+async function quickAction(prompt) {
+  const feed = document.getElementById('analysisFeed');
+  const empty = document.getElementById('analysisEmpty');
+  if (empty) empty.remove();
+
+  // Time divider
+  const div = document.createElement('div');
+  div.className = 'time-divider';
+  div.textContent = '— ' + prompt.slice(0, 48) + (prompt.length > 48 ? '…' : '') + ' —';
+  feed.appendChild(div);
+
+  const loader = document.createElement('div');
+  loader.className = 'card-loading';
+  loader.innerHTML = `Analyzing… <div class="loading-dots"><span></span><span></span><span></span></div>`;
+  feed.appendChild(loader);
+  feed.scrollTop = feed.scrollHeight;
+
+  try {
+    const recentTx = transcript.slice(-12).map(t => `${t.speaker}: ${t.text}`).join('\n') || 'No transcript yet.';
+
+    const res = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Auth-Token': authToken },
+      body: JSON.stringify({
+        sessionId,
+        system: buildSystemPrompt(),
+        messages: [{ role: 'user', content: `Transcript so far:\n${recentTx}\n\n${prompt}` }]
+      })
+    });
+
+    loader.remove();
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      renderErrorCard(feed, data.error || `Error ${res.status}`);
+      return;
+    }
+
+    const data = await res.json();
+    renderCards(feed, data.content);
+
+  } catch(err) {
+    loader.remove();
+    renderErrorCard(feed, 'Connection error. Please try again.');
+  }
+}
+
+function renderCards(feed, content) {
+  let cards = [];
+  try {
+    const clean = (content || '').replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    cards = parsed.cards || [];
+  } catch(e) {
+    // Fallback: render raw as analysis card
+    cards = [{ type: 'analysis', title: 'Analysis', body: content }];
+  }
+
+  const ts = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+
+  cards.forEach(card => {
+    const el = document.createElement('div');
+    el.className = 'card';
+    const badgeEmoji = {
+      objection:'🔴', warning:'🔴', strategy:'🟡',
+      rebuttal:'🟡', caselaw:'⚫', analysis:'⚫'
+    }[card.type] || '⚫';
+
+    el.innerHTML = `
+      <div class="card-header">
+        <div class="card-badge ${card.type}">${badgeEmoji} ${escHtml(card.type?.toUpperCase() || 'ANALYSIS')}</div>
+        <div class="card-time">${ts}</div>
+      </div>
+      <div class="card-body">${escHtml(card.body || '')}</div>
+      ${card.action ? `<div class="card-action">→ ${escHtml(card.action)}</div>` : ''}
+    `;
+    feed.appendChild(el);
+    cardCount++;
+  });
+
+  document.getElementById('cardCount').textContent = `${cardCount} response${cardCount!==1?'s':''}`;
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function renderErrorCard(feed, msg) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  el.innerHTML = `
+    <div class="card-header">
+      <div class="card-badge warning">● ERROR</div>
+    </div>
+    <div class="card-body">⚠ ${escHtml(msg)}</div>
+  `;
+  feed.appendChild(el);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+/* ════════════════════════════════════════
+   DEEPGRAM MIC
+════════════════════════════════════════ */
+let dgSocket    = null;
+let mediaStream = null;
+let mediaRecorder = null;
+let isRecording   = false;
+let speakerMap    = {}; // { "0": "Prosecutor", "1": "Witness" }
+let pendingNewSpeakers = new Set();
+
+async function toggleMic() {
+  if (isRecording) {
+    stopMic();
+  } else {
+    await startMic();
+  }
+}
+
+async function startMic() {
+  const btn    = document.getElementById('micBtn');
+  const btnTxt = document.getElementById('micBtnTxt');
+  const status = document.getElementById('micStatus');
+
+  btnTxt.textContent = 'Connecting…';
+  status.textContent = 'Fetching token…';
+
+  // Fetch Deepgram key
+  let dgKey;
+  try {
+    const res = await fetch('/api/deepgram', {
+      method: 'POST',
+      headers: { 'X-Auth-Token': authToken }
+    });
+    const data = await res.json();
+    if (!res.ok || data.error === 'deepgram_not_configured') {
+      status.textContent = 'Deepgram not configured — use manual entry';
+      btnTxt.textContent = '🎙 Start Mic';
+      return;
+    }
+    if (!res.ok || data.error) {
+      status.textContent = data.error || 'Failed to connect mic';
+      btnTxt.textContent = '🎙 Start Mic';
+      return;
+    }
+    dgKey = data.key;
+  } catch(e) {
+    status.textContent = 'Could not reach server';
+    btnTxt.textContent = '🎙 Start Mic';
+    return;
+  }
+
+  // Get microphone
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch(e) {
+    status.textContent = 'Microphone access denied';
+    btnTxt.textContent = '🎙 Start Mic';
+    return;
+  }
+
+  // Open Deepgram WebSocket
+  const dgUrl = `wss://api.deepgram.com/v1/listen?token=${dgKey}&model=nova-2&language=en-US&smart_format=true&diarize=true&punctuate=true&utterance_end_ms=1500&vad_events=true`;
+
+  try {
+    dgSocket = new WebSocket(dgUrl);
+  } catch(e) {
+    status.textContent = 'WebSocket failed';
+    btnTxt.textContent = '🎙 Start Mic';
+    return;
+  }
+
+  dgSocket.onopen = () => {
+    status.textContent = 'Listening…';
+    isRecording = true;
+    btn.classList.add('recording');
+    btnTxt.textContent = '⏹ Stop Mic';
+
+    // Pick best supported format
+    const mimeTypes = ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4'];
+    const mimeType  = mimeTypes.find(t => MediaRecorder.isTypeSupported(t)) || '';
+
+    mediaRecorder = new MediaRecorder(mediaStream, mimeType ? { mimeType } : {});
+    mediaRecorder.ondataavailable = e => {
+      if (e.data.size > 0 && dgSocket.readyState === WebSocket.OPEN) {
+        dgSocket.send(e.data);
+      }
+    };
+    mediaRecorder.start(250);
+  };
+
+  dgSocket.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type !== 'Results') return;
+      const alt = msg.channel?.alternatives?.[0];
+      if (!alt?.transcript?.trim()) return;
+      if (!msg.is_final) return;
+
+      const text    = alt.transcript.trim();
+      const words   = alt.words || [];
+      const speaker = words[0]?.speaker ?? 0;
+      const spKey   = String(speaker);
+
+      // If new speaker, prompt for tag
+      if (!speakerMap[spKey] && !pendingNewSpeakers.has(spKey)) {
+        pendingNewSpeakers.add(spKey);
+        addSpeakerTagRow(spKey);
+      }
+
+      const label = speakerMap[spKey] || `Speaker ${speaker}`;
+      addEntry(label, text, true);
+
+    } catch(err) { /* ignore parse errors */ }
+  };
+
+  dgSocket.onerror = () => {
+    status.textContent = 'Connection error';
+  };
+
+  dgSocket.onclose = () => {
+    if (isRecording) stopMic();
+  };
+}
+
+function stopMic() {
+  isRecording = false;
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+  if (dgSocket && dgSocket.readyState === WebSocket.OPEN) {
+    dgSocket.send(JSON.stringify({ type: 'CloseStream' }));
+    dgSocket.close();
+  }
+  mediaRecorder = null; mediaStream = null; dgSocket = null;
+
+  const btn = document.getElementById('micBtn');
+  btn.classList.remove('recording');
+  document.getElementById('micBtnTxt').textContent = '🎙 Start Mic';
+  document.getElementById('micStatus').textContent = 'Deepgram live transcription';
+}
+
+function addSpeakerTagRow(spKey) {
+  const container = document.getElementById('speakerTags');
+  container.classList.remove('hidden');
+
+  const row = document.createElement('div');
+  row.className = 'speaker-tag-row';
+  row.id = `srow-${spKey}`;
+  row.innerHTML = `
+    <div class="speaker-tag-label">Speaker ${spKey}</div>
+    <select class="speaker-tag-select" onchange="assignSpeaker('${spKey}', this.value)">
+      <option value="">— Tag speaker —</option>
+      <option>Defense</option>
+      <option>Prosecutor</option>
+      <option>Judge</option>
+      <option>Witness</option>
+      <option>Expert Witness</option>
+      <option>Defendant</option>
+      <option>Other</option>
+    </select>
+  `;
+  container.appendChild(row);
+}
+
+function assignSpeaker(spKey, label) {
+  if (!label) return;
+  speakerMap[spKey] = label;
+  pendingNewSpeakers.delete(spKey);
+  const row = document.getElementById(`srow-${spKey}`);
+  if (row) {
+    row.innerHTML = `
+      <div class="speaker-tag-label">Speaker ${spKey}</div>
+      <div class="speaker-tag-label" style="color:var(--gold)">→ ${escHtml(label)}</div>
+    `;
+  }
+}
+
+/* ════════════════════════════════════════
+   UTILS
+════════════════════════════════════════ */
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

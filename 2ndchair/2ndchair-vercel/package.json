@@ -1,0 +1,6 @@
+{
+  "name": "2ndchair",
+  "version": "1.0.0",
+  "description": "AI Litigation Command Center",
+  "engines": { "node": "20.x" }
+}
