@@ -678,19 +678,19 @@ footer{
 <section id="pricing">
   <div class="section-label">Pricing</div>
   <h2 class="section-title reveal" style="margin:0 auto;text-align:center">Simple, flat pricing</h2>
-  <p class="section-sub reveal" style="margin:16px auto 0;text-align:center">No per-seat fees. No usage limits. One firm, one subscription.</p>
+  <p class="section-sub reveal" style="margin:16px auto 0;text-align:center">Per-attorney licensing. One subscription per user.</p>
   <div class="pricing-card reveal">
-    <div class="pricing-badge">Most Popular</div>
-    <div class="pricing-name">Professional</div>
-    <div class="pricing-price">$79<span>/month</span></div>
-    <div class="pricing-desc">Everything your litigation team needs</div>
+    <div class="pricing-badge">Per Attorney</div>
+    <div class="pricing-name">Professional License</div>
+    <div class="pricing-price">$79<span>/attorney/month</span></div>
+    <div class="pricing-desc">One license per attorney. Each user gets their own dedicated access.</div>
     <ul class="pricing-features">
       <li>Unlimited trial sessions</li>
       <li>Live mic transcription + diarization</li>
       <li>Real-time objection detection</li>
       <li>Case law surfacing</li>
       <li>Persistent case context</li>
-      <li>Unlimited case files</li>
+      <li>One dedicated login per license</li>
       <li>Priority support</li>
     </ul>
     <a href="#contact" class="btn-primary" style="width:100%;display:block;text-align:center">Get Started</a>
@@ -704,7 +704,7 @@ footer{
   <div class="contact-grid">
     <div class="contact-info reveal">
       <div class="contact-info-title">Let's talk about your practice</div>
-      <div class="contact-info-text">Whether you're a solo practitioner or a full litigation team, we'll get you set up and running before your next trial date.</div>
+      <div class="contact-info-text">Whether you're a solo practitioner or building out a full litigation team, we'll get you set up and running before your next trial date.</div>
       <div class="contact-detail">
         <div class="contact-detail-label">Email</div>
         <div class="contact-detail-val">hello@2ndchair.net</div>
@@ -751,6 +751,17 @@ footer{
             <option>White Collar</option>
             <option>Civil Litigation</option>
             <option>Other</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Number of Attorneys</label>
+          <select id="cfAttorneys">
+            <option value="">Select one</option>
+            <option>1 (Solo)</option>
+            <option>2–5</option>
+            <option>6–10</option>
+            <option>11–25</option>
+            <option>25+</option>
           </select>
         </div>
         <div class="form-field">
@@ -802,6 +813,7 @@ async function submitContact() {
   const email    = document.getElementById('cfEmail').value.trim();
   const firm     = document.getElementById('cfFirm').value.trim();
   const practice = document.getElementById('cfPractice').value;
+  const attorneys= document.getElementById('cfAttorneys').value;
   const message  = document.getElementById('cfMessage').value.trim();
 
   if (!first || !email) {
@@ -817,14 +829,13 @@ async function submitContact() {
   spinner.classList.add('on');
   btnTxt.textContent = 'Sending…';
 
-  // Submit to Netlify Forms
   try {
     const res = await fetch('/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         'form-name': '2ndchair-contact',
-        first, last, email, firm, practice, message
+        first, last, email, firm, practice, attorneys, message
       }).toString()
     });
 
@@ -835,8 +846,7 @@ async function submitContact() {
       throw new Error('Submit failed');
     }
   } catch(e) {
-    // Fallback: open email client
-    window.location.href = `mailto:hello@2ndchair.net?subject=2ndChair Inquiry - ${encodeURIComponent(first + ' ' + last)}&body=${encodeURIComponent('Name: ' + first + ' ' + last + '\nEmail: ' + email + '\nFirm: ' + firm + '\nPractice: ' + practice + '\n\n' + message)}`;
+    window.location.href = `mailto:hello@2ndchair.net?subject=2ndChair Inquiry - ${encodeURIComponent(first + ' ' + last)}&body=${encodeURIComponent('Name: ' + first + ' ' + last + '\nEmail: ' + email + '\nFirm: ' + firm + '\nPractice: ' + practice + '\nAttorneys: ' + attorneys + '\n\n' + message)}`;
   } finally {
     btn.disabled = false;
     spinner.classList.remove('on');
@@ -848,7 +858,7 @@ async function submitContact() {
 <!-- Netlify Forms detection -->
 <form name="2ndchair-contact" netlify netlify-honeypot="bot-field" hidden>
   <input name="first"><input name="last"><input name="email">
-  <input name="firm"><input name="practice"><textarea name="message"></textarea>
+  <input name="firm"><input name="practice"><input name="attorneys"><textarea name="message"></textarea>
 </form>
 
 </body>
