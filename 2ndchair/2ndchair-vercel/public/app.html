@@ -685,8 +685,21 @@ body{
           <div class="mic-dot"></div>
           <span id="micBtnTxt">🎙 Start Mic</span>
         </button>
-        <div class="mic-status" id="micStatus">Deepgram live transcription</div>
-        <div class="speaker-tags hidden" id="speakerTags"></div>
+        <div class="mic-status" id="micStatus">Chrome / Edge live transcription</div>
+        <div class="speaker-tags hidden" id="speakerTags">
+          <div class="speaker-tag-row">
+            <div class="speaker-tag-label">Speaking as</div>
+            <select class="speaker-tag-select" id="activeSpeakerSelect" onchange="setSpeaker(this.value)">
+              <option value="Witness">Witness</option>
+              <option value="Prosecutor">Prosecutor</option>
+              <option value="Judge">Judge</option>
+              <option value="Expert Witness">Expert Witness</option>
+              <option value="Defendant">Defendant</option>
+              <option value="Defense">Defense</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <!-- Manual entry -->
@@ -1265,174 +1278,100 @@ function renderErrorCard(feed, msg) {
 }
 
 /* ════════════════════════════════════════
-   DEEPGRAM MIC
+   WEB SPEECH API MIC
 ════════════════════════════════════════ */
-let dgSocket    = null;
-let mediaStream = null;
-let mediaRecorder = null;
+let recognition   = null;
 let isRecording   = false;
-let speakerMap    = {};
-let pendingNewSpeakers = new Set();
+let activeSpeaker = 'Witness';
 
-async function toggleMic() {
+function toggleMic() {
   if (isRecording) {
     stopMic();
   } else {
-    await startMic();
+    startMic();
   }
 }
 
-async function startMic() {
+function startMic() {
   const btn    = document.getElementById('micBtn');
   const btnTxt = document.getElementById('micBtnTxt');
   const status = document.getElementById('micStatus');
 
-  btnTxt.textContent = 'Connecting…';
-  status.textContent = 'Fetching token…';
-
-  let dgKey;
-  try {
-    const res = await fetch('/api/deepgram', {
-      method: 'POST',
-      headers: { 'X-Auth-Token': authToken }
-    });
-    const data = await res.json();
-    if (!res.ok || data.error === 'deepgram_not_configured') {
-      status.textContent = 'Deepgram not configured — use manual entry';
-      btnTxt.textContent = '🎙 Start Mic';
-      return;
-    }
-    if (!res.ok || data.error) {
-      status.textContent = data.error || 'Failed to connect mic';
-      btnTxt.textContent = '🎙 Start Mic';
-      return;
-    }
-    dgKey = data.key;
-  } catch(e) {
-    status.textContent = 'Could not reach server';
-    btnTxt.textContent = '🎙 Start Mic';
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    status.textContent = 'Not supported — use Chrome or Edge';
     return;
   }
 
-  try {
-    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch(e) {
-    status.textContent = 'Microphone access denied';
-    btnTxt.textContent = '🎙 Start Mic';
-    return;
-  }
+  recognition = new SpeechRecognition();
+  recognition.continuous      = true;
+  recognition.interimResults  = true;
+  recognition.lang            = 'en-US';
+  recognition.maxAlternatives = 1;
 
-  const dgUrl = `wss://api.deepgram.com/v1/listen?access_token=${dgKey}&model=nova-2&language=en-US&smart_format=true&diarize=true&punctuate=true&utterance_end_ms=1500&vad_events=true`;
+  // Show speaker selector
+  document.getElementById('speakerTags').classList.remove('hidden');
 
-  try {
-    dgSocket = new WebSocket(dgUrl);
-  } catch(e) {
-    status.textContent = 'WebSocket failed';
-    btnTxt.textContent = '🎙 Start Mic';
-    return;
-  }
-
-  dgSocket.onopen = () => {
-    status.textContent = 'Listening…';
+  recognition.onstart = () => {
     isRecording = true;
     btn.classList.add('recording');
     btnTxt.textContent = '⏹ Stop Mic';
+    status.textContent = `Listening — speaking as: ${activeSpeaker}`;
+  };
 
-    const mimeTypes = ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4'];
-    const mimeType  = mimeTypes.find(t => MediaRecorder.isTypeSupported(t)) || '';
-
-    mediaRecorder = new MediaRecorder(mediaStream, mimeType ? { mimeType } : {});
-    mediaRecorder.ondataavailable = e => {
-      if (e.data.size > 0 && dgSocket.readyState === WebSocket.OPEN) {
-        dgSocket.send(e.data);
+  recognition.onresult = (e) => {
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        const text = e.results[i][0].transcript.trim();
+        if (text.length > 2) {
+          addEntry(activeSpeaker, text, true);
+        }
       }
-    };
-    mediaRecorder.start(250);
+    }
   };
 
-  dgSocket.onmessage = (e) => {
-    try {
-      const msg = JSON.parse(e.data);
-      if (msg.type !== 'Results') return;
-      const alt = msg.channel?.alternatives?.[0];
-      if (!alt?.transcript?.trim()) return;
-      if (!msg.is_final) return;
-
-      const text    = alt.transcript.trim();
-      const words   = alt.words || [];
-      const speaker = words[0]?.speaker ?? 0;
-      const spKey   = String(speaker);
-
-      if (!speakerMap[spKey] && !pendingNewSpeakers.has(spKey)) {
-        pendingNewSpeakers.add(spKey);
-        addSpeakerTagRow(spKey);
-      }
-
-      const label = speakerMap[spKey] || `Speaker ${speaker}`;
-      addEntry(label, text, true);
-
-    } catch(err) { /* ignore parse errors */ }
+  recognition.onerror = (e) => {
+    if (e.error === 'not-allowed') {
+      status.textContent = 'Microphone access denied';
+      stopMic();
+    } else if (e.error !== 'no-speech') {
+      status.textContent = `Error: ${e.error}`;
+    }
   };
 
-  dgSocket.onerror = () => {
-    status.textContent = 'Connection error';
+  recognition.onend = () => {
+    // Auto-restart — Chrome cuts off after ~60s of silence
+    if (isRecording) {
+      try { recognition.start(); } catch(e) {}
+    }
   };
 
-  dgSocket.onclose = () => {
-    if (isRecording) stopMic();
-  };
+  try {
+    recognition.start();
+  } catch(e) {
+    status.textContent = 'Could not start microphone';
+  }
 }
 
 function stopMic() {
   isRecording = false;
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-  if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
-  if (dgSocket && dgSocket.readyState === WebSocket.OPEN) {
-    dgSocket.send(JSON.stringify({ type: 'CloseStream' }));
-    dgSocket.close();
+  if (recognition) {
+    recognition.onend = null;
+    recognition.stop();
+    recognition = null;
   }
-  mediaRecorder = null; mediaStream = null; dgSocket = null;
-
   const btn = document.getElementById('micBtn');
   btn.classList.remove('recording');
   document.getElementById('micBtnTxt').textContent = '🎙 Start Mic';
-  document.getElementById('micStatus').textContent = 'Deepgram live transcription';
+  document.getElementById('micStatus').textContent = 'Chrome / Edge live transcription';
+  document.getElementById('speakerTags').classList.add('hidden');
 }
 
-function addSpeakerTagRow(spKey) {
-  const container = document.getElementById('speakerTags');
-  container.classList.remove('hidden');
-
-  const row = document.createElement('div');
-  row.className = 'speaker-tag-row';
-  row.id = `srow-${spKey}`;
-  row.innerHTML = `
-    <div class="speaker-tag-label">Speaker ${spKey}</div>
-    <select class="speaker-tag-select" onchange="assignSpeaker('${spKey}', this.value)">
-      <option value="">— Tag speaker —</option>
-      <option>Defense</option>
-      <option>Prosecutor</option>
-      <option>Judge</option>
-      <option>Witness</option>
-      <option>Expert Witness</option>
-      <option>Defendant</option>
-      <option>Other</option>
-    </select>
-  `;
-  container.appendChild(row);
-}
-
-function assignSpeaker(spKey, label) {
-  if (!label) return;
-  speakerMap[spKey] = label;
-  pendingNewSpeakers.delete(spKey);
-  const row = document.getElementById(`srow-${spKey}`);
-  if (row) {
-    row.innerHTML = `
-      <div class="speaker-tag-label">Speaker ${spKey}</div>
-      <div class="speaker-tag-label" style="color:var(--gold)">→ ${escHtml(label)}</div>
-    `;
-  }
+function setSpeaker(val) {
+  if (!val) return;
+  activeSpeaker = val;
+  const status = document.getElementById('micStatus');
+  if (isRecording) status.textContent = `Listening — speaking as: ${activeSpeaker}`;
 }
 
 /* ════════════════════════════════════════
