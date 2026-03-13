@@ -1226,7 +1226,7 @@ async function startMic() {
   }
 
   // Open Deepgram WebSocket
-  const dgUrl = `wss://api.deepgram.com/v1/listen?token=${dgKey}&model=nova-2&language=en-US&smart_format=true&diarize=true&punctuate=true&utterance_end_ms=1500&vad_events=true`;
+  const dgUrl = `wss://api.deepgram.com/v1/listen?access_token=${dgKey}&model=nova-2&language=en-US&smart_format=true&diarize=true&punctuate=true&utterance_end_ms=1500&vad_events=true`;
 
   try {
     dgSocket = new WebSocket(dgUrl);
