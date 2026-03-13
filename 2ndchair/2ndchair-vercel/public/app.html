@@ -184,6 +184,7 @@ body{
   display:block;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;
   color:var(--text2);margin-bottom:5px;
 }
+.form-group label .req{color:var(--red);margin-left:3px}
 .form-group input,
 .form-group select,
 .form-group textarea{
@@ -201,6 +202,32 @@ body{
 .form-group textarea::placeholder{color:var(--text3)}
 .form-group select option{background:var(--bg3)}
 .form-group textarea{resize:vertical;min-height:64px;font-size:.6rem}
+
+/* required error state */
+.form-group input.field-error,
+.form-group select.field-error{border-color:var(--red) !important}
+.field-error-msg{
+  font-size:.48rem;color:var(--red);margin-top:4px;
+  letter-spacing:.06em;display:none;
+}
+.field-error-msg.on{display:block}
+
+/* pill required error */
+.pills-error-msg{
+  font-size:.48rem;color:var(--red);margin-top:6px;
+  letter-spacing:.06em;display:none;
+}
+.pills-error-msg.on{display:block}
+.pills.pills-err .pill:not(.selected){border-color:rgba(224,92,92,.4)}
+
+.session-error{
+  background:var(--red-pale);border:1px solid rgba(224,92,92,.2);
+  padding:10px 14px;margin-bottom:12px;
+  font-size:.55rem;letter-spacing:.06em;color:var(--red);
+  display:none;
+}
+.session-error.on{display:block}
+
 .pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .pill{
   font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;
@@ -521,16 +548,22 @@ body{
       <div class="modal-title">⚖ Case Setup</div>
     </div>
     <div class="modal-body" id="sessionModalBody">
+
       <!-- Previous session banner -->
       <div class="prev-session-banner hidden" id="prevBanner">
         <span>↺ Previous session detected</span>
         <button class="btn-modal" onclick="loadPrevSession()" style="padding:4px 12px;font-size:.48rem">Load Previous</button>
       </div>
 
+      <!-- Validation error banner -->
+      <div class="session-error" id="sessionError">
+        Please complete all required fields before starting.
+      </div>
+
       <div class="section-divider">Jurisdiction</div>
       <div class="form-row">
         <div class="form-group">
-          <label>State</label>
+          <label>State <span class="req">*</span></label>
           <select id="sState">
             <option value="">Select state</option>
             <option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option>
@@ -547,10 +580,12 @@ body{
             <option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option>
             <option>Wisconsin</option><option>Wyoming</option><option>Federal</option>
           </select>
+          <div class="field-error-msg" id="errState">Required</div>
         </div>
         <div class="form-group">
-          <label>County / District</label>
+          <label>County / District <span class="req">*</span></label>
           <input type="text" id="sCounty" placeholder="e.g. Miami-Dade">
+          <div class="field-error-msg" id="errCounty">Required</div>
         </div>
       </div>
 
@@ -567,7 +602,7 @@ body{
       </div>
 
       <div class="form-group">
-        <label>Case Type</label>
+        <label>Case Type <span class="req">*</span></label>
         <div class="pills" id="caseTypePills">
           <div class="pill" data-val="Drug Offense">Drug Offense</div>
           <div class="pill" data-val="DUI/DWI">DUI/DWI</div>
@@ -580,10 +615,11 @@ body{
           <div class="pill" data-val="Juvenile">Juvenile</div>
           <div class="pill" data-val="Civil">Civil</div>
         </div>
+        <div class="pills-error-msg" id="errCaseType">Please select a case type</div>
       </div>
 
       <div class="form-group">
-        <label>Trial Phase</label>
+        <label>Trial Phase <span class="req">*</span></label>
         <div class="pills" id="phasePills">
           <div class="pill" data-val="Voir Dire">Voir Dire</div>
           <div class="pill" data-val="Opening">Opening</div>
@@ -594,6 +630,7 @@ body{
           <div class="pill" data-val="Sentencing">Sentencing</div>
           <div class="pill" data-val="Motion Hearing">Motion Hearing</div>
         </div>
+        <div class="pills-error-msg" id="errPhase">Please select a trial phase</div>
       </div>
 
       <div class="section-divider">People</div>
@@ -721,7 +758,6 @@ function toggleTheme() {
   localStorage.setItem(KEY_THEME, currentTheme);
   document.getElementById('themeBtn').textContent = currentTheme === 'dark' ? '☀ Light' : '☾ Dark';
 }
-// Set initial button label
 document.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('themeBtn');
   if (btn) btn.textContent = currentTheme === 'dark' ? '☀ Light' : '☾ Dark';
@@ -732,7 +768,6 @@ document.addEventListener('DOMContentLoaded', () => {
 ════════════════════════════════════════ */
 let authToken = null;
 
-// Restore session
 try {
   const stored = sessionStorage.getItem(KEY_AUTH);
   if (stored) {
@@ -740,7 +775,6 @@ try {
     if (parsed.token && parsed.exp && Date.now() < parsed.exp) {
       authToken = parsed.token;
       document.getElementById('loginScreen').classList.add('hidden');
-      // Show terms or app
       if (localStorage.getItem(KEY_TERMS) === '1') {
         showApp();
       } else {
@@ -829,7 +863,6 @@ let caseContext = {};
 function showApp() {
   document.getElementById('app').classList.remove('hidden');
   loadContext();
-  // Check for previous session
   const prev = localStorage.getItem(KEY_SESSION);
   if (prev) {
     try {
@@ -839,7 +872,6 @@ function showApp() {
       }
     } catch(e) {}
   }
-  // If no context set yet, open session setup
   if (!caseContext.state && !caseContext.caseName) {
     openSessionSetup();
   } else {
@@ -848,6 +880,7 @@ function showApp() {
 }
 
 function openSessionSetup() {
+  clearValidationErrors();
   populateSessionForm();
   document.getElementById('sessionOverlay').classList.remove('hidden');
 }
@@ -871,7 +904,6 @@ function populateSessionForm() {
   if (caseContext.judge)    setVal('sJudge', caseContext.judge);
   if (caseContext.witnesses)setVal('sWitnesses', caseContext.witnesses);
   if (caseContext.facts)    setVal('sFacts', caseContext.facts);
-  // Pills
   if (caseContext.caseType) {
     document.querySelectorAll('#caseTypePills .pill').forEach(p => {
       if (p.dataset.val === caseContext.caseType) p.classList.add('selected');
@@ -889,7 +921,65 @@ function setVal(id, val) {
   if (el) el.value = val;
 }
 
+/* ── Validation ── */
+function clearValidationErrors() {
+  document.getElementById('sessionError').classList.remove('on');
+  ['sState','sCounty'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('field-error');
+  });
+  ['errState','errCounty'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('on');
+  });
+  document.getElementById('caseTypePills').classList.remove('pills-err');
+  document.getElementById('phasePills').classList.remove('pills-err');
+  document.getElementById('errCaseType').classList.remove('on');
+  document.getElementById('errPhase').classList.remove('on');
+}
+
+function validateSession() {
+  clearValidationErrors();
+  let valid = true;
+
+  const state  = document.getElementById('sState').value;
+  const county = document.getElementById('sCounty').value.trim();
+  const caseType = document.querySelector('#caseTypePills .pill.selected')?.dataset.val || '';
+  const phase    = document.querySelector('#phasePills .pill.selected')?.dataset.val || '';
+
+  if (!state) {
+    document.getElementById('sState').classList.add('field-error');
+    document.getElementById('errState').classList.add('on');
+    valid = false;
+  }
+  if (!county) {
+    document.getElementById('sCounty').classList.add('field-error');
+    document.getElementById('errCounty').classList.add('on');
+    valid = false;
+  }
+  if (!caseType) {
+    document.getElementById('caseTypePills').classList.add('pills-err');
+    document.getElementById('errCaseType').classList.add('on');
+    valid = false;
+  }
+  if (!phase) {
+    document.getElementById('phasePills').classList.add('pills-err');
+    document.getElementById('errPhase').classList.add('on');
+    valid = false;
+  }
+
+  if (!valid) {
+    document.getElementById('sessionError').classList.add('on');
+    // Scroll to top of modal body so error is visible
+    document.getElementById('sessionModalBody').scrollTop = 0;
+  }
+
+  return valid;
+}
+
 function startSession() {
+  if (!validateSession()) return;
+
   caseContext = {
     state:     document.getElementById('sState').value,
     county:    document.getElementById('sCounty').value,
@@ -901,7 +991,6 @@ function startSession() {
     phase:     document.querySelector('#phasePills .pill.selected')?.dataset.val || '',
   };
   saveContext();
-  // Save as prev session
   try { localStorage.setItem(KEY_SESSION, JSON.stringify(caseContext)); } catch(e) {}
   document.getElementById('sessionOverlay').classList.add('hidden');
   updateTopbar();
@@ -910,6 +999,7 @@ function startSession() {
 function clearSession() {
   document.querySelectorAll('.pill.selected').forEach(p => p.classList.remove('selected'));
   ['sState','sCounty','sCaseName','sJudge','sWitnesses','sFacts'].forEach(id => setVal(id, ''));
+  clearValidationErrors();
   caseContext = {};
   saveContext();
 }
@@ -921,6 +1011,7 @@ function loadPrevSession() {
       caseContext = JSON.parse(raw);
       saveContext();
       populateSessionForm();
+      clearValidationErrors();
       document.getElementById('prevBanner').classList.add('hidden');
     }
   } catch(e) {}
@@ -937,18 +1028,32 @@ function updateTopbar() {
     : (caseContext.caseName || 'Case loaded');
 }
 
-// Pill toggle
+// Pill toggle — also clears error on selection
 document.querySelectorAll('#caseTypePills .pill').forEach(p => {
   p.addEventListener('click', () => {
     document.querySelectorAll('#caseTypePills .pill').forEach(x => x.classList.remove('selected'));
     p.classList.add('selected');
+    document.getElementById('caseTypePills').classList.remove('pills-err');
+    document.getElementById('errCaseType').classList.remove('on');
   });
 });
 document.querySelectorAll('#phasePills .pill').forEach(p => {
   p.addEventListener('click', () => {
     document.querySelectorAll('#phasePills .pill').forEach(x => x.classList.remove('selected'));
     p.classList.add('selected');
+    document.getElementById('phasePills').classList.remove('pills-err');
+    document.getElementById('errPhase').classList.remove('on');
   });
+});
+
+// Clear field errors on input
+document.getElementById('sState').addEventListener('change', () => {
+  document.getElementById('sState').classList.remove('field-error');
+  document.getElementById('errState').classList.remove('on');
+});
+document.getElementById('sCounty').addEventListener('input', () => {
+  document.getElementById('sCounty').classList.remove('field-error');
+  document.getElementById('errCounty').classList.remove('on');
 });
 
 /* ════════════════════════════════════════
@@ -1017,12 +1122,9 @@ function buildSystemPrompt() {
 
 async function analyzeEntry(entry) {
   const feed = document.getElementById('analysisFeed');
-
-  // Remove empty state
   const empty = document.getElementById('analysisEmpty');
   if (empty) empty.remove();
 
-  // Add time divider periodically
   if (cardCount > 0 && cardCount % 5 === 0) {
     const div = document.createElement('div');
     div.className = 'time-divider';
@@ -1030,7 +1132,6 @@ async function analyzeEntry(entry) {
     feed.appendChild(div);
   }
 
-  // Loading card
   const loader = document.createElement('div');
   loader.className = 'card-loading';
   loader.innerHTML = `Analyzing… <div class="loading-dots"><span></span><span></span><span></span></div>`;
@@ -1073,7 +1174,6 @@ async function quickAction(prompt) {
   const empty = document.getElementById('analysisEmpty');
   if (empty) empty.remove();
 
-  // Time divider
   const div = document.createElement('div');
   div.className = 'time-divider';
   div.textContent = '— ' + prompt.slice(0, 48) + (prompt.length > 48 ? '…' : '') + ' —';
@@ -1122,7 +1222,6 @@ function renderCards(feed, content) {
     const parsed = JSON.parse(clean);
     cards = parsed.cards || [];
   } catch(e) {
-    // Fallback: render raw as analysis card
     cards = [{ type: 'analysis', title: 'Analysis', body: content }];
   }
 
@@ -1172,7 +1271,7 @@ let dgSocket    = null;
 let mediaStream = null;
 let mediaRecorder = null;
 let isRecording   = false;
-let speakerMap    = {}; // { "0": "Prosecutor", "1": "Witness" }
+let speakerMap    = {};
 let pendingNewSpeakers = new Set();
 
 async function toggleMic() {
@@ -1191,7 +1290,6 @@ async function startMic() {
   btnTxt.textContent = 'Connecting…';
   status.textContent = 'Fetching token…';
 
-  // Fetch Deepgram key
   let dgKey;
   try {
     const res = await fetch('/api/deepgram', {
@@ -1216,7 +1314,6 @@ async function startMic() {
     return;
   }
 
-  // Get microphone
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch(e) {
@@ -1225,7 +1322,6 @@ async function startMic() {
     return;
   }
 
-  // Open Deepgram WebSocket
   const dgUrl = `wss://api.deepgram.com/v1/listen?access_token=${dgKey}&model=nova-2&language=en-US&smart_format=true&diarize=true&punctuate=true&utterance_end_ms=1500&vad_events=true`;
 
   try {
@@ -1242,7 +1338,6 @@ async function startMic() {
     btn.classList.add('recording');
     btnTxt.textContent = '⏹ Stop Mic';
 
-    // Pick best supported format
     const mimeTypes = ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4'];
     const mimeType  = mimeTypes.find(t => MediaRecorder.isTypeSupported(t)) || '';
 
@@ -1268,7 +1363,6 @@ async function startMic() {
       const speaker = words[0]?.speaker ?? 0;
       const spKey   = String(speaker);
 
-      // If new speaker, prompt for tag
       if (!speakerMap[spKey] && !pendingNewSpeakers.has(spKey)) {
         pendingNewSpeakers.add(spKey);
         addSpeakerTagRow(spKey);
